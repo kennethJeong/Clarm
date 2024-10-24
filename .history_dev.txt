@@ -1,0 +1,286 @@
+/////////////// Development History /////////////
+--- 23/08/25 ---
+FFmpegKit 사용하여 filter 적용된 temp 파일 생성
+-> temp 파일과 기존에 녹음해둔 파일을 비교
+-> pts_time(오차범위 설정 필요) 내에 같은 Peak값 존재 시, 동일 audio 파일로 인식하도록 설정.
+
+--- 23/08/28 ---
+-> bandLab 이용해서 정확히 1.0초에 Min_level & Max_level에서 피크가 뜨는지 확인
+
+--- 23/09/08 ---
+-> Screen Depth Processing
+    main -> clapping_alarm -> edit_alarm
+    ring_alarm -> let_out_clap -> (success) clapping_alarm
+                               -> (failure) let_out_clap
+-> 작업 필요 내용
+---> ring_alarm -> "알람 해제하기" (move to let_out_clap.dart) 버튼 추가
+---> let_out_clap -> 1. (3,2,1)카운트(효과음 필요) 후 박수 문제 들려주기. (with Sound-Wave Animation)
+                  -> 2. 문제 들려준 후, "따라서 박수 쳐주세요." 텍스트 팝업. (with Fade-out Animation)
+                  -> 3. 다시 (3,2,1)카운트 후, 문제에서와 같은 Sound-Wave Animation 과 함께 박수 소리 녹음. (같은 시간 동안)
+                  -> 4. 문제 및 정답 녹음 파일 비교 분석 후, 유사하면 move to [edit_alarm.dart],
+                                                    다르면 "다시 박수 쳐주세요" 텍스트 팝업 후 3번 반복.
+                                                     (3회 실패 시 5분 지연 작동)
+
+
+< Audio Correlation 조사를 위한 사전 준비 과정 >
+1. Apply bandpass filter to reduce noise
+2. Normalize for amplitude
+3. Calculate the cross-correlation
+
+< User 의 박수 세팅 가능 항목 및 범위 >
+ ∙ 박수 길이(초) -> [2, 3, 4] 초(seconds)
+ ∙ 박수 수 -> [2]=4~5
+         -> [3]=5~6
+         -> [4]=6~8
+ ∙
+ ∙
+ ∙
+ ∙
+ ∙
+
+
+
+
+< 업무 리스트 >
+// 1. 박수 비교 실패 시, 패널티 적용
+//    . 3번 실패 시 -> 5분 뒤 재 작동
+//    . 재 작동된 알람 실패 시 -> 알람 취소 버튼 활성화
+//       .. 알람 취소 버튼 클릭 시, 알람 제거 필요. (Alarm.stop(alarmSetting.id))
+// 2. sound - 30개 / clap - 30개로 구성하기 (BandLab 미디 작업 필요)
+//    . 모든 sound - 데시벨(소리 음량) 맞추기
+3. 알람 추가하기 화면 수정
+//    . 알람 sound 설정 없애기 (랜덤이므로)
+//    . UI 바꾸기
+//        .. 진동 설정
+//        .. 다시 알림
+//          ... 알람마다 On-Off 용도의 boolean 추가
+//                .... riverpod 으로 만들어야 할 듯?
+//            ... 해당 알람이 false 일 때 -> 작동 X
+//        .. 라벨 추가 가능하게 하기
+        .. 매주 해당 요일마다 작동하게 하기 -> 온&오프 식으로 바꾸기
+//        .. 현재 시간 기준 / 안지났으면 오늘, 지났으면 내일 시간으로 설정하기
+4. 이미 설정된 알람 클릭 시 - 수정하기 상태
+    . 설정된 alarm data 불러와서 그대로 input 에 보여주기
+    . alarm 변경 function 작동해서 수정하기
+5. 메인 화면 UI 바꾸기
+    . 보라색 + 분홍색 조합
+    . ListView + Scrollable
+    . 한 화면에 10개정도 보이게
+//    . ListView 의 가장 하단에 [+] 버튼 크게 ListView Tile 로 넣기
+//    . App Bar 바꾸기 -> 없애자.
+    . floatingActionButton
+//        .. Bottom Modal 방식으로 ??
+        .. Setting
+            ... 다크모드
+                .... 전체 테마(기본 or 다크모드 색상 따로) 설정해야함
+                .... RiverPod 으로 상태관리
+                .... Local 에 저장 -> SplashScreen 로드할 때 파일 생성 / value 체크
+            ... 문의하기
+                .... {omni.k} 에 탑재된 기능 그대로 가져다 쓰기
+                .... showDialog 사용
+            ... 언어 설정 (지원 언어 최대한 많이)
+                .... CupertinoPicker 사용
+                .... [OK], [Close] 버튼 사용
+                .... 크기 및 위치 조정
+        .. 기록 보기 (Show Records)
+//    . 폰트 설정
+6. 앱 강제 종료 시
+    . Notification - 텍스트 및 UI 변경
+7. Splash Screen 추가
+    . 앱 로고 이미지 만들어 넣기
+    . 녹음 권한 확인하기
+8. admob 추가하기
+    . 알람 추가 시 - full size
+    . 알람 변경 시 - full size
+    . 알람 작동 시 - banner size
+    . 알람 종료 시 - full size
+    . 알람 박수 실패 시 - full size
+9. Bottom Navigation
+10. Stop Watch
+11. Langauge Switch -> 번역 추가
+    . 'easy_localization' 사용하기
+
+
+///
+// . logo 아이콘 만들기
+//. splash screen 만들기
+//    .. 권한 확인
+//    .. local txt file 만들기
+//        ... 다크모드
+
+
+///
+// . 알람 추가 (edit_alarm) 하고 Navigator.pop(context.false) -> Reload 없음 -> clarm 에 추가 안됨
+// .                          Navigator.pop(context.true) -> Reload 있음! -> clarm 에 추가되는데, 다른 alarm_tile 의 상태가 초기화됨
+//                                                                       -> 스위치를 껐었는데 갑자기 켜져있게 바뀜;;
+//                                                                       -> 어떡해야하나.......
+
+// . [반복 알림] 설정
+//     .. 설명: 알람 해제에 실패했을 경우, 1분 후로 같은 알람 설정 -> 알람 반복하기
+//     .. 방법: alarmSettings 의 notificationBody 에 value 저장 -> ring_alarm 에서 판별
+//     .. 과제: 1. edit_alarm 에 반복 알람 선택 여부(switch) 구현
+//             2. alarm_title 에 반복 알람 여부 표시(아이콘 이미지..?)
+
+// . [waveform.dart] (compareAfterFilterApplied) 실행 중에 왜 Circle Indicator 가 나오는지 모르겠음.
+
+// . 다크모드 -> 해보자 !
+
+//. 연습모드
+//    .. [Instant Alarm] 프레임 사용해서 만들기
+//    ... 초기 사용자를 위한 튜토리얼 형식으로 진행하되, [...] 버튼 안에 넣어놓고,
+//    ... 언제든지 사용해볼 수 있도록 하기.
+//    ... 대신, 버튼 클릭 시 AlertDialog 로 주의 사항(ex. 갑자기 큰 소리 발생) 고지 후 작동하게끔.
+
+
+**********************************************************************
+**********************************************************************
+//    .. empty.wav 파일로 설정한 후, [ring_alarm.dart]로 넘어갔을 때, 각종 오디오 작업(merge, apply filter 등)이 바로 진행되어
+//        play audio 되도록 설정하기.
+**********************************************************************
+**********************************************************************
+
+
+. notification -> title 및 body 가 안보이면서, 동시에 'test', 'clap' 등의 value 가 전달될 수 있는 방법 모색하기.
+//    .. (ex. notification 의 height 가 한정적일 것으로 예상 -> title 및 body 앞에 empty string을 왕창 넣어보기.)
+//        ... 1. [ring_alarm.dart] 에서 <alarmSettings.assetAudioPath> 을 안씀. -> String 이니까 이걸 이용해보는 것도?
+//        ... 2. 화면 상단의 notification 이 [ring_alarm.dart] 로 가기 전or후 언제 설정된 값인지 확인 후,
+//                -> {test, clap, repeat} 등의 value 만 해당 screen 에 저장하고,
+//                    alarmSettings.notificationBody 에서는 지울 수 있는지 확인해보기!
+//        ... Ios의 경우 -> 1번은 안먹힘.. // <alarmSettings.assetAudioPath> 에 진짜로 존재하는 .wav 파일이어야 함..
+    .. 앱을 작동 중지(백그라운드에서 없앰) -> 알람 작동 안함?
+//        ... "앱을 백그라운드에서 지우신다면, 알람이 작동 안할 수 있어요." <- notification 띄우기
+//             => [[ Alarm.setNotificationOnAppKillContent ]] 사용하기 !!!
+        ... Local Notification 사용하기 !!
+    .. A 알람이 작동 중인데, B 알람이 울리는 것을 방지하는(A 알람이 끝난 후 B 알람이 울리도록 딜레이하는) 방법은?
+
+//. 메일 보내기
+//    .. 이전에 만든(omni.k) 프레임 그대로 사용하기
+
+//. 일반 알람 or 박수 알람 -> 선택할 수 있게 하기.
+//    .. 설명: 박수 알람은 특수하기 때문에 일반 알람을 기본으로 하되, 모닝콜 같은 경우에만 박수 알람으로 사용하도록 하자.
+//    .. 과제: 1. [edit_alarm.dart] 에 박수 알람인지 구분하는 switch 버튼 생성
+//            2. 전달 인자(value <- notificationBody 에 저장) 설정
+//            3. 알람 울릴 때 [ring_alarm.dart] 직접 확인하기
+
+// . 언어(Language) 삭제
+
+. 알람 테스트
+//    .. Notification (상단 알람 바) 바꾸기
+//        ==> 아예 Notification 없앴음.(240426)
+//    .. 일반 알람 설정에 오류 발생
+//        ... 알람 소리 안남(왜 empty.wav 파일로 설정됨?)
+//        ... waveform 애니메이션은 나오게 설정
+//        ... (Alarm Off) 버튼 누르고 나서 navigation.pop 하면, switch 꺼져야하는데 -> 안그럼.
+
+
+//. iOS -> Test
+//    .. Notification
+//        ... <alarmSettings.assetAudioPath> 에 진짜로 존재하는 audio 파일이 존재하는지 확인 후 -> goToRingAlarm 진행됌.
+//        ==> 아예 Notification 없앴음.(240426)
+//
+//    .. 녹음 안됌
+//        //... 처음에 권한을 안받아서 그런가 ? --> XXXXXXXX
+//        [ERROR:flutter/runtime/dart_vm_initializer.cc(41)] Unhandled Exception: PlatformException(AudioWaveforms, Failed to start recording, null, null)
+//         #0      StandardMethodCodec.decodeEnvelope (package:flutter/src/services/message_codecs.dart:651:7)
+//         #1      MethodChannel._invokeMethod (package:flutter/src/services/platform_channel.dart:334:18)
+//         <asynchronous suspension>
+//         #2      AudioWaveformsInterface.record (package:audio_waveforms/src/base/audio_waveforms_interface.dart:19:25)
+//         <asynchronous suspension>
+//         #3      RecorderController.record (package:audio_waveforms/src/controllers/recorder_controller.dart:196:26)
+//         <asynchronous suspension>
+//
+//         ... 현재 확장자명=.wav / but, iOS에서 recorder가 wav 파일을 지원하지 않는다면?
+//            .... iOS 일 경우에는 m4a 등으로 변환해야하나..?
+//            => iOSencoder 를 AppleLossLess 로 바꿔서 해결. 다른 codec 은 다 안됐음.
+//
+//    .. audioWaveform 클릭하면 -> 해당 위치로 animation 이동 후 실행됨 -> 방지해야 함.
+
+//. 알람이 실행 중일 때, 다른 알람이 켜지는 것을 막는(딜레이시키는) 방법은?
+//. 알람 생성 or 수정 or 제거될 때, 몇시 몇분 후에 알람이 울릴 예정인지 알려주는 Snack Bar 만들기.
+//    .. top 위치 수정하기
+//    .. [ another_flushbar 1.12.30 ] 사용해보기 !!
+//        ... -> Navigator.pop 됨과 동시에 사라짐. (SnackBar 는 그렇지 않음)
+//. 메일 기능 넣기
+
+
+. 광고 제거 + 결제 기능 넣기
+    .. 광고를 제거했다면, 그 정보는 어디에 저장할 것인가?
+        ... 어플 제거 후 재설치했을 때에 유저 판별을 위해서는 DB에 저장하면서 동시에, 로그인 기능도 필요하지않나? (구글 로그인 정도?)
+        ... 최적의 방법은, 앱 초기 설치 시 구글 로그인 X
+             -> 어플 제거 후 다시 설치하였다 하더라도 => 광고 제거 버튼을 다시 눌러서 확인(구글 로그인) 후 광고 제거 확인 값을 Local 에 저장하기
+        ... 하나의 광고 제거된 아이디를 중복적으로 사용되지 않게 하도록 -> DB 에 (구글 유저 정보, 광고 제거 결제 유무) 를 같이 저장해야 됌.
+// . admob 추가하기
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//. App Killed (Detached) 됐을 때, Warning Notification 보내기 -> 잘 안됌..
+
+//. notificationBody 에 values 실어서 전달하는 방식 바꾸기
+//    -> 알람이 울릴 때 화면 상단에 Notification 이 뜨는데, 이때 해당 알람을 설정할 때 사용하는 values 가 유저에게 보여지게 됨.
+//    -> 그러므로 설정된 알람이 Subscribe 될 때, 다른 방식으로 value 들이 전달될 수 있는 방안 모색 필요.
+//    -> *** 그냥 알람이 울릴 때 -> Notification 을 안띄우는 방식으로 하고싶은데, 잘 안됌.
+//            => IOS 의 경우 알람이 울릴 때 Push Notification 이 작동하지 않으므로,
+//                -> alarmSettings.notificationBody 에 옵션 실어서 전달.
+//            => AOS 의 경우 알람이 울릴 때 Push Notification 이 작동하므로,
+//                -> alarmSettings.assetAudioPath 에 옵션 실어서 전달.
+
+//. Admob 추가하기
+//    -> (clarm.dart) => 최하단 배너 광고
+//    -> (clarm.dart) => switch Off -> On 할 때, 전면 광고 시청 후에 알람 Set 되도록 설정.
+//    -> (edit_alarm.dart) => 알람 Save 버튼 클릭 시, 전면 광고 시청 후에 알람 Set 되도록 설정.
+
+//. Permission
+//    -> 허용 안하면, AlertDialog 해서 App Setting 까지
+
+//. iOS => 패턴 진동이 작동안함.
+
+//. Alarm - Vibration
+//    -> 왜 안꺼짐?
+//    -> [Vibration] 패키지 사용 + Peak 분석해서 => Vibration 패턴화함.
+//        => On/Off 가능
+
+//. Alarm - 박수 녹음 실패 (Alarm Off 버튼) 수치 조정
+//    -> Test 1번 / 일반 3번
+
+//. 안드로이드 - Edit Alarm
+//    -> Label 클릭 시, 키보드 나오면서 animation => 느리고 부자연스러움
+
+//. 기능 Test.
+//    -> 플랫폼 별로.
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// 업데이트 예정 ///////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+. 같은 시간(시, 분)에 새로 알람을 설정하려고 할 때
+    -> AlertDialog 로 알려주기 (설정이 겹쳐서 안된다고)
+
+.
+
+. 광고 제거 (각 플랫폼마다 결제 기능) 추가
+    -> References => [ https://dev-blackcat.tistory.com/40 ]
+                  => [ https://stackoverflow.com/questions/63718827/flutter-admob-remove-ads-by-iap ]
+                  => [ https://stackoverflow.com/questions/73035526/how-to-get-a-unique-identifier-for-in-app-purchases-in-flutter-which-stays-alway ]
+                  => [ https://medium.com/@ronakofficial/in-app-purchase-in-flutter-9d0536dc5990 ]
+
+        /*
+        iOS (Apple ID)
+        사용자가 앱을 삭제하고 다시 설치하더라도, 같은 Apple ID로 로그인하면 이전에 구매한 내역을 복원할 수 있습니다.
+        StoreKit을 통해 복원 처리를 진행할 때, restoreCompletedTransactions() 메소드가
+        내부적으로 사용자의 Apple ID를 참조하여 해당 계정의 구매 내역을 자동으로 확인하고 복원합니다.
+
+        AOS
+        ndroid (Google 계정)
+        Android 사용자도 앱을 삭제 후 재설치하면서 같은 Google 계정을 사용한다면, 이전 구매 내역을 조회하고 복원하는 것이 가능합니다.
+        Google Play Billing Library를 사용하여 queryPurchases()나 queryPurchaseHistoryAsync()를 호출할 때,
+        이는 내부적으로 현재 로그인된 Google 계정의 구매 내역을 검색합니다.
+        */
+
+. (audio_process.dart) 의 {void compareAudios}
+    -> 해당 함수가 작동할 때, record file 이 진짜 박수 소리인지 확인할 수 있는 기능 추가.
+    -> e.g. AI recognition.
+
+. 자동화
+
+. 홈화면 위젯 만들기
+    -> Reference => [ https://velog.io/@ddoh_k/CodeLab-Adding-a-Home-Screen-Widget-in-Flutter-App ]
